@@ -1,0 +1,25 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  # Build development image
+  - docker build -t carlanders/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  # Run tests
+  - docker run -e CI=true carlanders/react-test npm test 
+
+after_success:
+  # Build production images
+  - docker build -t carlanders/multi-client ./client
+  - docker build -t carlanders/multi-nginx ./nginx
+  - docker build -t carlanders/multi-server ./server
+  - docker build -t carlanders/multi-worker ./worker
+  # Login to Docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Push production images to DockerHub
+  - docker push carlanders/multi-client
+  - docker push carlanders/multi-nginx
+  - docker push carlanders/multi-server
+  - docker push carlanders/multi-worker
